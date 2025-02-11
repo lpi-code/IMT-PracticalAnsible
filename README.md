@@ -195,4 +195,143 @@ suse | SUCCESS => {
 
 All host are on success
 
-## 5. Install package
+## 5. Ping with atelier-03
+
+```
+[vagrant@control ~]$ ansible all -i target01,target02,target03 -u vagrant -m ping
+target01 | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+...
+```
+
+It works
+
+## 6. Install direnv
+
+```
+vagrant@debian:~/monprojet$ echo "export TESTVAR=Yatahongaga" > .envrc
+direnv: error /home/vagrant/monprojet/.envrc is blocked. Run `direnv allow` to approve its content
+vagrant@debian:~/monprojet$ direnv allow
+direnv: loading ~/monprojet/.envrc
+direnv: export +TESTVAR
+vagrant@debian:~/monprojet$ echo "export TESTVAR=Yatahongaga" > .envrc
+direnv: loading ~/monprojet/.envrc
+direnv: export +TESTVAR
+vagrant@debian:~/monprojet$ cat .envrc 
+export TESTVAR=Yatahongaga
+```
+
+I had to run `direnv allow` to approve the content of the `.envrc` file.
+
+```
+[vagrant@rocky ~]$ echo "export TESTVAR=Yatahongaga" > .envrc
+direnv: error /home/vagrant/.envrc is blocked. Run `direnv allow` to approve its content
+[vagrant@rocky ~]$ direnv allow
+direnv: loading ~/.envrc
+direnv: export +TESTVAR
+[vagrant@rocky ~]$ echo $TESTVAR
+Yatahongaga
+```
+It also works on rocky
+
+## 7. Inventory
+
+```
+[vagrant@ansible ~]$ ansible all -i debian,rocky,suse -m ping
+debian | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+rocky | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+[WARNING]: Platform linux on host suse is using the discovered Python interpreter at /usr/bin/python3.6, but future installation of another
+Python interpreter could change the meaning of that path. See https://docs.ansible.com/ansible-
+core/2.14/reference_appendices/interpreter_discovery.html for more information.
+suse | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3.6"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+```
+
+It works on atelier-05 we are ready to go to the next step.
+We create a new inventory file `ansible.cfg`
+ 
+```
+[vagrant@ansible ema]$ touch ~/.ansible.cfg
+[vagrant@ansible ema]$ ansible --version | head -n 2
+ansible [core 2.14.17]
+  config file = /home/vagrant/.ansible.cfg
+```
+
+
+We export ANSIBLE_CONFIG
+
+``` bash 
+`[vagrant@ansible ema]$ export ANSIBLE_CONFIG=$(expand_path ansible.cfg)
+-bash: expand_path: command not found
+
+```
+
+Expand_path is not found, we will use `pwd` instead.
+
+```bash
+[vagrant@ansible ema]$ export ANSIBLE_CONFIG=$(pwd)/ansible.cfg
+[vagrant@ansible ema]$ echo $ANSIBLE_CONFIG
+/home/vagrant/ansible/projets/ema/ansible.cfg
+```
+
+
+I had trouble running the command `direnv allow` because the `.envrc` file was not found. I had to create it first.
+
+```
+[vagrant@ansible ema]$ direnv allow
+direnv: error .envrc file not found
+[vagrant@ansible ema]$ touch .envrc
+direnv: error /home/vagrant/ansible/projets/ema/.envrc is blocked. Run `direnv allow` to approve its content
+[vagrant@ansible ema]$ direnv allow
+direnv: loading ~/ansible/projets/ema/.envrc
+```
+
+I know write ANSIBLE_CONFIG in the `.envrc` file.
+
+```bash
+[vagrant@ansible ema]$ echo "export ANSIBLE_CONFIG=$(pwd)/ansible.cfg" > .envrc
+direnv: error /home/vagrant/ansible/projets/ema/.envrc is blocked. Run `direnv allow` to approve its content
+[vagrant@ansible ema]$ direnv allow
+direnv: loading ~/ansible/projets/ema/.envrc
+```
+
+We write a simple inventory file.
+
+``` ini
+#~/ansible/projets/ema/anisble.cfg
+[defaults]
+inventory = ./inventory
+log_path = ~/logs
+```
+
+We create the logs directory.
+
+```bash
+[vagrant@ansible ema]$ mkdir logs
+```
+
+We create the inventory file.
+
+
