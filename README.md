@@ -332,6 +332,91 @@ We create the logs directory.
 [vagrant@ansible ema]$ mkdir logs
 ```
 
-We create the inventory file.
+Checking if logs are working.
+
+```bash
+[vagrant@ansible ema]$ ansible all -i rocky,debian,suse -m ping | head -n 3
+[WARNING]: Platform linux on host suse is using the discovered Python
+interpreter at /usr/bin/python3.6, but future installation of another Python
+interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-
+core/2.14/reference_appendices/interpreter_discovery.html for more information.
+debian | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+[vagrant@ansible ema]$ cat ~/logs/ansible.log | tail -n 3
+    "changed": false,
+    "ping": "pong"
+}
+```
+
+Let's write the inventory file.
+
+```ini
+[testing]
+rocky
+debian
+suse
+
+[testing:vars]
+ansible_python_interpreter=/usr/bin/python3
+ansible_user=vagrant
+```
+
+Let's test the inventory file.
+
+```bash
+[vagrant@ansible ema]$ ansible all -m ping
+debian | SUCCESS => {
+    "changed": false,
+    "ping": "pong"
+}
+rocky | SUCCESS => {
+    "changed": false,
+    "ping": "pong"
+}
+suse | SUCCESS => {
+    "changed": false,
+    "ping": "pong"
+}
+```
+It works.
 
 
+Let's try to do some privileged operations : 
+```bash
+[vagrant@ansible ema]$ ansible all -a "head -n 1 /etc/shadow"
+debian | FAILED | rc=1 >>
+head: cannot open '/etc/shadow' for reading: Permission deniednon-zero return code
+rocky | FAILED | rc=1 >>
+head: cannot open '/etc/shadow' for reading: Permission deniednon-zero return code
+suse | FAILED | rc=1 >>
+head: cannot open '/etc/shadow' for reading: Permission deniednon-zero return code
+````
+
+We can fix permission denied with ansible_become. This will make ansible use sudo to run the command.
+
+```bash
+[vagrant@ansible ema]$ ansible all -a "head -n 1 /etc/shadow" -e "ansible_become=true"
+debian | CHANGED | rc=0 >>
+root:!$y$j9T$1UCdnxq34BxNVM1P31I2R1$d6AgxFx72UvS6HpmwGhHWo/d1bfrXtZ/Fds0zJ5oy13:19727:0:99999:7:::
+rocky | CHANGED | rc=0 >>
+root:!!$6$xDTZIRLhFUOzp2Zh$MpRtbsOkz9Qvbxy1C2k9njrhkNJtSCEy6M8EKpDRsnTqIe4FZqwKatw8jtRYAFxacL6o2ITGNkSqXJOn/2lQi0:19728:0:99999:7:::
+suse | CHANGED | rc=0 >>
+root:!$6$Vkg2x/wlMzXkunYA$aeTVs1qXTe/Dmoo9unCiOxVqERxQyWaevK/lQEfuceo0oH1WyJqbZ0IDXCLVPLFQZ0C70cLdmxH4IbnH4GReg0:19728::::::
+```
+It is now working properly.
+
+We can add this to the inventory file.
+
+```ini
+[testing]
+rocky
+debian
+suse
+
+[testing:vars]
+ansible_python_interpreter=/usr/bin/python3
+ansible_user=vagrant
+ansible_become=true
+```
