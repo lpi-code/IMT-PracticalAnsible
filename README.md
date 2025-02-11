@@ -113,3 +113,25 @@ ansible [core 2.17.8]
 ```
 
 Ansible is much more recent with the ppa repository.
+
+## 3. Install with pip
+
+```bash
+$ python3 -m venv ansible
+$ source ansible/bin/activate
+(ansible) $ pip install ansible
+```
+We check the version
+
+```bash
+(ansible) [vagrant@rocky ~]$ ansible --version
+ansible [core 2.15.13]
+  config file = None
+  configured module search path = ['/home/vagrant/.ansible/plugins/modules', '/usr/share/ansible/plugins/modules']
+  ansible python module location = /home/vagrant/ansible/lib64/python3.9/site-packages/ansible
+  ansible collection location = /home/vagrant/.ansible/collections:/usr/share/ansible/collections
+  executable location = /home/vagrant/ansible/bin/ansible
+  python version = 3.9.18 (main, Sep  7 2023, 00:00:00) [GCC 11.4.1 20230605 (Red Hat 11.4.1-2)] (/home/vagrant/ansible/bin/python3)
+  jinja version = 3.1.5
+  libyaml = True
+```
