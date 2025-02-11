@@ -85,5 +85,31 @@ ansible 2.10.8
   python version = 3.10.12 (main, Jun 11 2023, 05:26:28) [GCC 11.4.0]
 ```
 
+## 2. Install with ppa
 
+```bash
+$ sudo apt-add-repository ppa:ansible/ansible
+Repository: 'deb https://ppa.launchpadcontent.net/ansible/ansible/ubuntu/ jammy main'
+Description:
+Ansible is a radically simple IT automation platform that makes your applications and systems easier to deploy. Avoid writing scripts or custom code to deploy and update your applications— automate in a language that approaches plain English, using SSH, with no agents to install on remote systems.
+...
 
+$ sudo apt update && sudo apt install ansible
+
+```
+
+I check the version of ansible.
+```bash
+vagrant@ubuntu:~$ ansible --version
+ansible [core 2.17.8]
+  config file = /etc/ansible/ansible.cfg
+  configured module search path = ['/home/vagrant/.ansible/plugins/modules', '/usr/share/ansible/plugins/modules']
+  ansible python module location = /usr/lib/python3/dist-packages/ansible
+  ansible collection location = /home/vagrant/.ansible/collections:/usr/share/ansible/collections
+  executable location = /usr/bin/ansible
+  python version = 3.10.12 (main, Jun 11 2023, 05:26:28) [GCC 11.4.0] (/usr/bin/python3)
+  jinja version = 3.0.3
+  libyaml = True
+```
+
+Ansible is much more recent with the ppa repository.
