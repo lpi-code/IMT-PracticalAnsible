@@ -135,3 +135,64 @@ ansible [core 2.15.13]
   jinja version = 3.1.5
   libyaml = True
 ```
+
+## 4. Ping ansible
+
+We setup atelier-02
+
+```
+[vagrant@ansible ~]$ ansible all -i debian,rocky,suse -u vagrant -m ping
+debian | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+[WARNING]: Platform linux on host suse is using the discovered Python interpreter at /usr/bin/python3.6, but future installation of another
+Python interpreter could change the meaning of that path. See https://docs.ansible.com/ansible-
+core/2.14/reference_appendices/interpreter_discovery.html for more information.
+suse | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3.6"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+rocky | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+[vagrant@ansible ~]$ ansible all -i debian,rocky,suse -u vagrant -m ping
+debian | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+rocky | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+[WARNING]: Platform linux on host suse is using the discovered Python interpreter at /usr/bin/python3.6, but future installation of another
+Python interpreter could change the meaning of that path. See https://docs.ansible.com/ansible-
+core/2.14/reference_appendices/interpreter_discovery.html for more information.
+suse | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3.6"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+```
+
+All host are on success
+
+## 5. Install package
