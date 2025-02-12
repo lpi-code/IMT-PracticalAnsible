@@ -571,3 +571,101 @@ root:*:19579:0:99999:7:::
 ```
 No error, it works.
 
+# 10. Idempotence
+
+1. Install packages with adhoc command
+
+```bash
+[vagrant@ansible ema]$ ansible all -b -m package -a '{"name":["git","tree","nmap"],"state":"present"}'
+debian | CHANGED => {
+    "changed": true,
+...
+rocky | CHANGED => {
+    "changed": true,
+...
+suse | CHANGED => {
+    "changed": true,
+...
+```
+
+Second run
+
+```bash
+[vagrant@ansible ema]$ ansible all -b -m package -a '{"name":["git","tree","nmap"],"state":"present"}' | grep -A 1 "changed"
+    "changed": false,
+    "name": [
+--
+    "changed": false
+}
+--
+    "changed": false,
+    "msg": "Nothing to do",
+
+```
+It is indeed idempotent.
+
+2. Remove packages
+
+```bash
+ansible all -b -m package -a '{"name":["git","tree","nmap"],"state":"absent"}' | grep "changed"
+    "changed": true,
+    "changed": true,
+    "changed": true,
+```
+
+Second run
+
+```bash
+[vagrant@ansible ema]$ ansible all -b -m package -a '{"name":["git","tree","nmap"],"state":"absent"}' | grep "changed"
+    "changed": false,
+    "changed": false,
+    "changed": false,
+```
+
+3. Copying files
+
+```bash
+[vagrant@ansible ema]$ ansible all -b -m copy -a 'src=/etc/fstab dest=/tmp/test3.txt' | grep "changed"
+    "changed": true,
+    "changed": true,
+    "changed": true,
+```
+
+Second run
+
+```bash
+[vagrant@ansible ema]$ ansible all -b -m copy -a 'src=/etc/fstab dest=/tmp/test3.txt' | grep "changed"
+    "changed": false,
+    "changed": false,
+    "changed": false,
+```
+
+4. Removing files
+
+```bash
+[vagrant@ansible ema]$ ansible all -b -m file -a 'path=/tmp/test3.txt state=absent' | grep "changed"
+    "changed": true,
+    "changed": true,
+    "changed": true,
+```
+
+Second run
+
+```bash
+[vagrant@ansible ema]$ ansible all -b -m file -a 'path=/tmp/test3.txt state=absent' | grep "changed"
+    "changed": false,
+    "changed": false,
+    "changed": false,
+```
+
+5. Show main partition usage with `df -h /`
+
+```bash
+[vagrant@ansible ema]$ ansible all -b -m command -a 'df -h /' -o
+debian | CHANGED | rc=0 | (stdout) Filesystem      Size  Used Avail Use% Mounted on\n/dev/vda3       124G  1.8G  116G   2% /
+rocky | CHANGED | rc=0 | (stdout) Filesystem                  Size  Used Avail Use% Mounted on\n/dev/mapper/rl_rocky9-root   70G  2.2G   68G   4% /
+suse | CHANGED | rc=0 | (stdout) Filesystem      Size  Used Avail Use% Mounted on\n/dev/sda3       124G  2.3G  118G   2% /
+```
+
+We notice that the output is in yellow and that CHANGED is displayed. This is because the output is not idempotent as the command module cannot determine if the output is the same or not.
+
