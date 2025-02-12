@@ -239,7 +239,7 @@ Yatahongaga
 ```
 It also works on rocky
 
-## 7. Inventory
+## 7. Logs
 
 ```
 [vagrant@ansible ~]$ ansible all -i debian,rocky,suse -m ping
@@ -270,7 +270,7 @@ suse | SUCCESS => {
 ```
 
 It works on atelier-05 we are ready to go to the next step.
-We create a new inventory file `ansible.cfg`
+We create a new config file `ansible.cfg`
  
 ```
 [vagrant@ansible ema]$ touch ~/.ansible.cfg
@@ -350,6 +350,8 @@ debian | SUCCESS => {
 }
 ```
 
+# 8. Inventory
+
 Let's write the inventory file.
 
 ```ini
@@ -420,3 +422,152 @@ ansible_python_interpreter=/usr/bin/python3
 ansible_user=vagrant
 ansible_become=true
 ```
+
+# 9. Recap (atelier-06)
+
+
+1. Editing /etc/host to access other vm
+```
+# /etc/hosts
+127.0.0.1      localhost.localdomain  localhost
+192.168.56.10  ansible.sandbox.lan    ansible
+192.168.56.20  rocky.sandbox.lan      rocky
+192.168.56.30  debian.sandbox.lan     debian
+192.168.56.40  suse.sandbox.lan       suse
+```
+
+We test the connection with the new hostname.
+
+```bash
+vagrant@control:~$  ping -c 1 rocky && ping -c 1 debian && ping -c 1 suse && echo all is good
+PING rocky.sandbox.lan (192.168.56.20) 56(84) bytes of data.
+64 bytes from rocky.sandbox.lan (192.168.56.20): icmp_seq=1 ttl=64 time=1.03 ms
+...
+all is good
+```
+
+2. Config ssh connection to remote host
+```bash
+ssh-keygen -t rsa
+ssh-keyscan -t rsa rocky debian suse >> .ssh/known_hosts
+for host in rocky debian suse; do ssh-copy-id $host; done
+``` 
+
+3. Installing ansible
+`$ sudo apt install ansible`
+
+4. Pinging with ansible
+```bash
+vagrant@control:~$ ansible all -i rocky,debian,suse -m ping
+debian | SUCCESS => {
+suse | SUCCESS => {
+rocky | SUCCESS => {
+```
+
+5. Creating directory `monprojet` with `mkdir monprojet`
+
+6. Creating empty ansible.cfg file `touch monprojet/ansible.cfg`
+
+7. Make sure ansible use the right config file
+```bash
+$ vagrant@control:~/monprojet$ sudo apt install -y direnv
+$ vagrant@control:~/monprojet$ echo 'eval "$(direnv hook bash)"' >> ~/.bashrc
+$ vagrant@control:~/monprojet$ source ~/.bashrc
+$ vagrant@control:~/monprojet$ direnv edit .
+```
+
+We add the following line to the `ANSIBLE_CONFIG` variable in the `.envrc` file `export ANSIBLE_CONFIG=$HOME/monprojet/ansible.cfg`
+
+8. Checking if it works.
+
+```bash
+vagrant@control:~/monprojet$ ansible --version | head -n 2
+ansible 2.10.8
+  config file = /home/vagrant/monprojet/ansible.cfg
+```
+
+9. Setting inventory file in `ansible.cfg`
+
+```ini
+[defaults]
+inventory = $HOME/monprojet/hosts
+```
+
+Creating the inventory file. `$ touch $HOME/monprojet/hosts`
+
+10. Enable logs in `ansible.cfg`
+
+```ini
+[defaults]
+inventory = $HOME/monprojet/hosts
+log_path = $HOME/journal/ansible.log
+```
+
+11. Testing the logs
+
+```bash
+vagrant@control:~/monprojet$ mkdir $HOME/journal
+vagrant@control:~/monprojet$ ansible all -i rocky,debian,suse -m ping
+vagrant@control:~/monprojet$ tail -n 3 $HOME/journal/ansible.log
+    "changed": false,
+    "ping": "pong"
+}
+```
+
+12. Populate the inventory file
+
+```ini
+[testlab]
+rocky
+debian
+suse
+```
+Testing the inventory file.
+
+```bash
+vagrant@control:~/monprojet$ ansible testlab -m ping
+debian | SUCCESS => {
+suse | SUCCESS => {
+rocky | SUCCESS => {
+```
+
+13. Forcing ansible user to be vagrant
+
+Editing hosts
+```ini
+[testlab:vars]
+ansible_user=vagrant
+```
+
+14. Testing the connection.
+
+```bash
+vagrant@control:~/monprojet$ ansible all -m ping
+debian | SUCCESS => {
+suse | SUCCESS => {
+rocky | SUCCESS => {
+```
+
+15. Setting up privilege escalation
+
+```ini
+[testlab:vars]
+ansible_user=vagrant
+ansible_become=true
+```
+in the inventory file.
+
+16. Testing privilege escalation by showing first line of /etc/shadow
+
+```bash
+vagrant@control:~/monprojet$ ansible all -a "head -n 1 /etc/shadow"
+ansible all -a "head -n 1 /etc/shadow"
+rocky | CHANGED | rc=0 >>
+root:*:19579:0:99999:7:::
+debian | CHANGED | rc=0 >>
+root:*:19579:0:99999:7:::
+suse | CHANGED | rc=0 >>
+root:*:19579:0:99999:7:::
+```
+No error, it works.
+
