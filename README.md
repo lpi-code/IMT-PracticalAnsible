@@ -669,3 +669,79 @@ suse | CHANGED | rc=0 | (stdout) Filesystem      Size  Used Avail Use% Mounted o
 
 We notice that the output is in yellow and that CHANGED is displayed. This is because the output is not idempotent as the command module cannot determine if the output is the same or not.
 
+# 11. Unreachable hosts
+
+*atelier-08*
+
+```bash
+[vagrant@ansible ema]$ ansible -m ping all
+rocky | SUCCESS => {
+    "changed": false,
+    "ping": "pong"
+}
+suse | SUCCESS => {
+    "changed": false,
+    "ping": "pong"
+}
+debian | SUCCESS => {
+    "changed": false,
+    "ping": "pong"
+}
+```
+
+We can see that all hosts are reachable. Let's  bippity boppity power off-ity susie.
+
+```bash
+$ vagrant halt suse && vagrant global-status
+[fog][WARNING] Unrecognized arguments: libvirt_ip_command
+==> suse: Attempting graceful shutdown of VM...
+id       name           provider state   directory                                                      
+--------------------------------------------------------------------------------------------------------
+c1f8150  k3smaster      libvirt shutoff /home/skorll/vagrant/ubuntu20.04                               
+dd294de  k3smaster2     libvirt running /home/skorll/vagrant/ubuntu20.04                               
+12c6109  minecraft-imt2 libvirt running /home/skorll/lpi_code.ipv6_labvm_deploy/vagrant                
+4a7159a  rocky          libvirt running /home/skorll/IMT-PracticalAnsible/formation-ansible/atelier-08 
+63bf1f4  ansible        libvirt running /home/skorll/IMT-PracticalAnsible/formation-ansible/atelier-08 
+d1602ea  debian         libvirt running /home/skorll/IMT-PracticalAnsible/formation-ansible/atelier-08 
+18cf8be  suse           libvirt shutoff /home/skorll/IMT-PracticalAnsible/formation-ansible/atelier-08 
+ 
+The above shows information about all known Vagrant environments
+on this machine. This data is cached and may not be completely
+up-to-date (use "vagrant global-status --prune" to prune invalid
+entries). To interact with any of the machines, you can go to that
+directory and run Vagrant, or you can use the ID directly with
+Vagrant commands from any directory. For example:
+"vagrant destroy 1a2b3c4d"
+```
+
+
+```bash
+[vagrant@ansible ema]$ ansible-playbook hello-ansible.yml -l testing
+
+PLAY [all] **************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] **************************************************************************************************************************************************************
+ok: [debian]
+ok: [rocky]
+fatal: [suse]: UNREACHABLE! => {"changed": false, "msg": "Failed to connect to the host via ssh: ssh: connect to host suse port 22: Connection timed out", "unreachable": true}
+
+TASK [debug] ************************************************************************************************************************************************************************
+ok: [rocky] => {
+    "msg": "Hello Ansible!"
+}
+ok: [debian] => {
+    "msg": "Hello Ansible!"
+}
+
+PLAY RECAP **************************************************************************************************************************************************************************
+debian                     : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+rocky                      : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+suse                       : ok=0    changed=0    unreachable=1    failed=0    skipped=0    rescued=0    ignored=0  
+```
+We see that suse is unreachable. ansible-playbook will continue to run the playbook on the other hosts but will not run it on the unreachable host.
+
+# 12. Playbook
+
+*atelier-09*
+
+```bash
