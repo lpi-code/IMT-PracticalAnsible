@@ -744,4 +744,296 @@ We see that suse is unreachable. ansible-playbook will continue to run the playb
 
 *atelier-09*
 
+I've wrote this playbook to install and enable apache2 on all hosts.
+```yaml
+# apache-01.yml
+- hosts: all
+  gather_facts: true
+  tasks:
+    - name: Refresh apt cache
+      ansible.builtin.apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      when: ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu'
+
+    - name: Install Apache
+      ansible.builtin.package:
+        name: "{{ 'apache2' if ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu' else 'httpd' }}"
+        state: present
+  
+    - name: Enable and start apache
+      ansible.builtin.service:
+        name: "{{ 'apache2' if ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu' else 'httpd' }}"
+        state: started
+        enabled: yes
+      
+    - name: Create a new index.html file
+      ansible.builtin.copy:
+        dest: /var/www/html/index.html
+        content: |
+          <!doctype html>
+          <html>
+            <head>
+              <meta charset="utf-8">
+              <title>Test</title>
+            </head>
+            <body>
+              <h1>My first Ansible-managed website</h1>
+            </body>
+          </html>
+      notify: restart apache
+
+    handlers:
+      - name: restart apache
+        ansible.builtin.service:
+            name: "{{ 'apache2' if ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu' else 'httpd' }}"
+            state: restarted
+```
+
+Let's test it.
+
 ```bash
+[vagrant@ansible ema]$ ansible-playbook apache-01.yml
+vagrant@control:~/ansible/projets/ema$ ansible-playbook playbooks/apache-01.yml
+
+PLAY [all] **************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] **************************************************************************************************************************************************************
+ok: [target01]
+ok: [target03]
+ok: [target02]
+
+TASK [Refresh apt cache] ************************************************************************************************************************************************************
+ok: [target03]
+ok: [target01]
+ok: [target02]
+
+TASK [Install Apache] ***************************************************************************************************************************************************************
+ok: [target01]
+ok: [target03]
+ok: [target02]
+
+TASK [Enable and start apache] ******************************************************************************************************************************************************
+ok: [target02]
+ok: [target01]
+ok: [target03]
+
+TASK [Create a new index.html file] *************************************************************************************************************************************************
+ok: [target03]
+ok: [target02]
+ok: [target01]
+
+PLAY RECAP **************************************************************************************************************************************************************************
+target01                   : ok=5    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+target02                   : ok=5    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+target03                   : ok=5    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+```
+
+Lets curl to check if the website is up.
+
+```bash
+vagrant@control:~/ansible/projets/ema$ for host in target01 target02 target03; do curl $host; done
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Test</title>
+  </head>
+  <body>
+    <h1>My first Ansible-managed website</h1>
+  </body>
+</html>
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Test</title>
+  </head>
+  <body>
+    <h1>My first Ansible-managed website</h1>
+  </body>
+</html>
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Test</title>
+  </head>
+  <body>
+    <h1>My first Ansible-managed website</h1>
+  </body>
+</html>
+```
+
+Nice, it works. Let's edit the page and start-at-task.
+
+```yaml
+# apache-01
+...
+    - name: Create a new index.html file
+      ansible.builtin.copy:
+        dest: /var/www/html/index.html
+        mode: '0644'
+        content: |
+          <!doctype html>
+          <html>
+            <head>
+              <meta charset="utf-8">
+              <title>Test</title>
+            </head>
+            <body>
+              <h1>My very first Ansible-managed website</h1>
+            </body>
+          </html>
+      notify: restart apache
+
+```
+
+```bash
+[vagrant@ansible ema]$ ansible-playbook playbooks/apache-01.yml -l testing --start-at-task="Create a new index.html file" -l all
+
+PLAY [all] **************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] **************************************************************************************************************************************************************
+ok: [target03]
+ok: [target02]
+ok: [target01]
+
+TASK [Create a new index.html file] *************************************************************************************************************************************************
+changed: [target02]
+changed: [target03]
+changed: [target01]
+
+RUNNING HANDLER [restart apache] ****************************************************************************************************************************************************
+changed: [target02]
+changed: [target03]
+changed: [target01]
+
+PLAY RECAP **************************************************************************************************************************************************************************
+target01                   : ok=3    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+target02                   : ok=3    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+target03                   : ok=3    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0 
+```
+Yaay, it works.
+
+# 13. Adaptive playbook
+*atelier-10*
+As our previous playbook already took into account the different package managers, we can use it as an adaptive playbook and fix the package name if the package manager is not the same.
+
+
+```bash
+[vagrant@ansible playbooks]$ ansible-playbook apache-global.yml 
+
+PLAY [all] **************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] **************************************************************************************************************************************************************
+ok: [debian]
+ok: [rocky]
+ok: [suse]
+
+TASK [Refresh apt cache] ************************************************************************************************************************************************************
+skipping: [rocky]
+skipping: [suse]
+changed: [debian]
+
+TASK [Install Apache] ***************************************************************************************************************************************************************
+changed: [debian]
+changed: [rocky]
+changed: [suse]
+
+TASK [Enable and start apache] ******************************************************************************************************************************************************
+ok: [debian]
+fatal: [suse]: FAILED! => {"changed": false, "msg": "Could not find the requested service httpd: host"}
+changed: [rocky]
+
+TASK [Create a new index.html file] *************************************************************************************************************************************************
+changed: [debian]
+changed: [rocky]
+
+RUNNING HANDLER [restart apache] ****************************************************************************************************************************************************
+changed: [debian]
+changed: [rocky]
+
+PLAY RECAP **************************************************************************************************************************************************************************
+debian                     : ok=6    changed=4    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+rocky                      : ok=5    changed=4    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   
+suse                       : ok=2    changed=1    unreachable=0    failed=1    skipped=1    rescued=0    ignored=0  
+````
+
+We can see that the playbook is adaptive but does not work on suse because the service name is not the same. We can fix this by adding a condition to the service name.
+
+```yaml
+  - name: Enable and start apache
+    ansible.builtin.service:
+      name: "{{ 'httpd' if ansible_os_family == 'RedHat' else 'apache2' }}"
+      state: started
+      enabled: yes
+...
+handlers:
+  - name: restart apache
+    ansible.builtin.service:
+        name: "{{ 'httpd' if ansible_os_family == 'RedHat' else 'apache2' }}"
+        state: restarted
+```
+
+Let's test it.
+
+```bash
+[vagrant@ansible playbooks]$ ansible-playbook apache-global.yml
+...
+TASK [Enable and start apache] ******************************************************************************************************************************************************
+ok: [debian]
+ok: [rocky]
+changed: [suse]
+
+TASK [Create a new index.html file] *************************************************************************************************************************************************
+ok: [debian]
+ok: [rocky]
+fatal: [suse]: FAILED! => {"changed": false, "checksum": "8790722aac6f41940ba7f9460dd6b5c5bf58f7cc", "msg": "Destination directory /var/www/html does not exist"}
+...
+```
+We can see that we can enable and start service but there is still an error suse. Suse by default use /srv/www/cgi-bin instead of /var/www/html. We can fix this by adding a condition to the copy task.
+
+```yaml
+  - name: Create a new index.html file
+    ansible.builtin.copy:
+      dest: "{{ '/srv/www/cgi-bin/index.html' if ansible_os_family == 'Suse' else '/var/www/html/index.html' }}"
+      mode: '0644'
+      content: |
+        <!doctype html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <title>Test</title>
+          </head>
+          <body>
+            <h1>My very first Ansible-managed website</h1>
+            </body>
+        </html>
+    notify: restart apache
+```
+
+Let's test it.
+
+```bash
+[vagrant@ansible playbooks]$ ansible-playbook apache-global.yml
+...
+TASK [Create a new index.html file] *************************************************************************************************************************************************
+ok: [debian]
+ok: [rocky]
+changed: [suse]
+
+RUNNING HANDLER [restart apache] ****************************************************************************************************************************************************
+changed: [suse]
+
+PLAY RECAP **************************************************************************************************************************************************************************
+debian                     : ok=5    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+rocky                      : ok=4    changed=0    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   
+suse                       : ok=5    changed=2    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   
+```
+
+Nice it works.
+
+# 14. Handlers
+
