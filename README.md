@@ -1037,3 +1037,198 @@ Nice it works.
 
 # 14. Handlers
 
+After editing we try without the handlers.
+```bash
+vagrant@control:~/ansible/projets/ema$ ansible-playbook playbooks/apache-01.yml 
+
+PLAY [debian] ***********************************************************************************************************************************************************************
+
+TASK [Gathering Facts] **************************************************************************************************************************************************************
+ok: [target01]
+ok: [target03]
+ok: [target02]
+
+TASK [Update package information] ***************************************************************************************************************************************************
+changed: [target01]
+changed: [target02]
+changed: [target03]
+
+TASK [Install Apache] ***************************************************************************************************************************************************************
+changed: [target03]
+changed: [target01]
+changed: [target02]
+
+TASK [Start & enable Apache] ********************************************************************************************************************************************************
+ok: [target02]
+ok: [target03]
+ok: [target01]
+
+TASK [Install custom web page] ******************************************************************************************************************************************************
+changed: [target01]
+changed: [target02]
+changed: [target03]
+
+TASK [Configure redirect] ***********************************************************************************************************************************************************
+changed: [target01]
+changed: [target02]
+changed: [target03]
+
+TASK [Activate redirect] ************************************************************************************************************************************************************
+changed: [target03]
+changed: [target01]
+changed: [target02]
+
+TASK [Reload Apache] ****************************************************************************************************************************************************************
+changed: [target01]
+changed: [target03]
+changed: [target02]
+
+PLAY RECAP **************************************************************************************************************************************************************************
+target01                   : ok=8    changed=6    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+target02                   : ok=8    changed=6    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+target03                   : ok=8    changed=6    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+```
+We can see that it is not idempotent as apache will always be reloaded.
+
+
+```yaml
+
+- hosts: debian
+
+  tasks:
+
+    - name: Update package information
+      apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Install Apache
+      apt:
+        name: apache2
+
+    - name: Start & enable Apache
+      service:
+        name: apache2
+        state: started
+        enabled: true
+
+    - name: Install custom web page
+      copy:
+        dest: /var/www/html/index.html
+        mode: 0644
+        content: |
+          <!doctype html>
+          <html>
+            <head>
+              <meta charset="utf-8">
+              <title>Test</title>
+            </head>
+            <body>
+              <h1>My first Ansible-managed website</h1>
+            </body>
+          </html>
+
+    - name: Configure redirect
+      copy:
+        dest: /etc/apache2/conf-available/redirect.conf
+        content: |
+          Redirect /start https://www.startpage.com
+      notify: Reload Apache
+
+    - name: Activate redirect
+      command:
+        cmd: a2enconf redirect
+        creates: /etc/apache2/conf-enabled/redirect.conf
+
+  handlers:
+
+    - name: Reload Apache
+      service:
+        name: apache2
+        state: reloaded
+```
+
+With this new playbook, we can see that the handlers are now used and the playbook is idempotent.
+
+```bash
+vagrant@control:~/ansible/projets/ema$ ansible-playbook playbooks/apache-02.yml
+...
+PLAY RECAP **************************************************************************************************************************************************************************
+target01                   : ok=7    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+target02                   : ok=7    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+target03                   : ok=7    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+```
+
+*atelier-11*
+
+We write the following playbook :
+``yaml
+- hosts: all
+  gather_facts: true
+  tasks:
+    - name: Install chrony
+      ansible.builtin.package:
+        name: "{{ 'chrony' if ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu' else 'chrony' }}"
+        state: present
+    
+    - name: Start and enable chrony
+      ansible.builtin.service:
+        name: "{{ 'chrony' if ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu' else 'chronyd' }}"
+        state: started
+        enabled: yes
+    
+    - name: Configure chrony
+      ansible.builtin.copy:
+        dest: "{{ '/etc/chrony/chrony.conf' if ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu' else '/etc/chrony.conf' }}"
+        mode: '0644'
+        content: |
+          # /etc/chrony.conf
+          server 0.fr.pool.ntp.org iburst
+          server 1.fr.pool.ntp.org iburst
+          server 2.fr.pool.ntp.org iburst
+          server 3.fr.pool.ntp.org iburst
+          driftfile /var/lib/chrony/drift
+          makestep 1.0 3
+          rtcsync
+          logdir /var/log/chrony
+        notify: restart chrony
+  
+  handlers:
+    - name: restart chrony
+      ansible.builtin.service:
+        name: "{{ 'chrony' if ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu' else 'chronyd' }}"
+        state: restarted
+```
+
+Checking syntax:
+```bash
+$ ansible-lint ../../playbooks/chronyd.yml  -v
+INFO     Executing syntax check on ../../playbooks/chronyd.yml (0.39s)
+````
+It is correct.
+
+Let's run the playbook.
+
+
+We check that system clock is synchronized.
+
+```bash
+[vagrant@control playbooks]$ ansible all -m shell -a "timedatectl | grep synchronized" --one-line
+target01 | CHANGED | rc=0 | (stdout) System clock synchronized: yes
+target03 | CHANGED | rc=0 | (stdout) System clock synchronized: yes
+target02 | CHANGED | rc=0 | (stdout) System clock synchronized: yes
+```
+
+We check that the playbook is idempotent.
+
+```bash
+[vagrant@control playbooks]$ ansible-playbook chronyd.yml -l all
+...
+PLAY RECAP **************************************************************************************************************************************************************************
+target01                   : ok=4    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+target02                   : ok=4    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+target03                   : ok=4    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+```
+
+It is idempotent.
+
