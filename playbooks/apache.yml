@@ -1,0 +1,43 @@
+# apache-01.yml
+- hosts: all
+  gather_facts: true
+  tasks:
+    - name: Refresh apt cache
+      ansible.builtin.apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      when: ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu'
+
+    - name: Install Apache
+      ansible.builtin.package:
+        name: "{{ 'apache2' if ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu' else 'httpd' }}"
+        state: present
+  
+    - name: Enable and start apache
+      ansible.builtin.service:
+        name: "{{ 'apache2' if ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu' else 'httpd' }}"
+        state: started
+        enabled: yes
+      
+    - name: Create a new index.html file
+      ansible.builtin.copy:
+        dest: "{{ '/srv/www/htdocs/index.html' if ansible_os_family == 'SUSE' else '/var/www/html/index.html' }}"
+        content: |
+          <!doctype html>
+          <html>
+            <head>
+              <meta charset="utf-8">
+              <title>Test</title>
+            </head>
+            <body>
+              <h1>My first Ansible-managed website</h1>
+            </body>
+          </html>
+      notify: restart apache
+
+  handlers:
+    - name: restart apache
+      ansible.builtin.service:
+          name: "{{ 'apache2' if ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu' else 'httpd' }}"
+          state: restarted
+          

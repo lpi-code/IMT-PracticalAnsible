@@ -1,0 +1,35 @@
+- hosts: all
+  gather_facts: true
+  tasks:
+    - name: Install chrony
+      ansible.builtin.package:
+        name: "{{ 'chrony' if ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu' else 'chrony' }}"
+        state: present
+    
+    - name: Start and enable chrony
+      ansible.builtin.service:
+        name: "{{ 'chrony' if ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu' else 'chronyd' }}"
+        state: started
+        enabled: yes
+    
+    - name: Configure chrony
+      ansible.builtin.copy:
+        dest: "{{ '/etc/chrony/chrony.conf' if ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu' else '/etc/chrony.conf' }}"
+        mode: '0644'
+        content: |
+          # /etc/chrony.conf
+          server 0.fr.pool.ntp.org iburst
+          server 1.fr.pool.ntp.org iburst
+          server 2.fr.pool.ntp.org iburst
+          server 3.fr.pool.ntp.org iburst
+          driftfile /var/lib/chrony/drift
+          makestep 1.0 3
+          rtcsync
+          logdir /var/log/chrony
+      notify: restart chrony
+  
+  handlers:
+    - name: restart chrony
+      ansible.builtin.service:
+        name: "{{ 'chrony' if ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu' else 'chronyd' }}"
+        state: restarted
