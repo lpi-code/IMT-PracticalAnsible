@@ -1,0 +1,18 @@
+# display_user.yml
+- hosts: all
+  gather_facts: false
+  vars_prompt:
+    - name: user
+      prompt: "Enter your username"
+      private: no
+      default: "microlinux"
+    - name: password
+      prompt: "Enter your password"
+      private: yes
+      default: "yatahongaga"
+  tasks:
+    - name: Display the value of user and password
+      ansible.builtin.debug:
+        msg: |
+          The username is {{ user }}
+          The password is {{ password }}

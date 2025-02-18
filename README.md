@@ -1439,3 +1439,52 @@ target03                   : ok=1    changed=0    unreachable=0    failed=0    s
 ```
 
 It works.
+
+We try to prompt the user
+
+```yaml
+# display_user.yml
+- hosts: all
+  gather_facts: false
+  vars_prompt:
+    - name: user
+      prompt: "Enter your username"
+      private: no
+      default: "microlinux"
+    - name: password
+      prompt: "Enter your password"
+      private: yes
+      default: "yatahongaga"
+  tasks:
+    - name: Display the value of user and password
+      ansible.builtin.debug:
+        msg: |
+          The username is {{ user }}
+          The password is {{ password }}
+```
+
+```bash
+[vagrant@control playbooks]$ ansible-playbook display_user.yml 
+Enter your username [microlinux]: 
+Enter your password [yatahongaga]: 
+
+PLAY [all] ***************************************************************************************************************************************************************************************************************************************************************************************************
+
+TASK [Display the value of user and password] ****************************************************************************************************************************************************************************************************************************************************************
+ok: [target01] => {
+    "msg": "The username is microlinux\nThe password is yatahongaga\n"
+}
+ok: [target02] => {
+    "msg": "The username is microlinux\nThe password is yatahongaga\n"
+}
+ok: [target03] => {
+    "msg": "The username is microlinux\nThe password is yatahongaga\n"
+}
+
+PLAY RECAP ***************************************************************************************************************************************************************************************************************************************************************************************************
+target01                   : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+target02                   : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+target03                   : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+```
+
+We are prompted for the username and password.
