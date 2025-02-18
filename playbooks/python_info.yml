@@ -1,0 +1,8 @@
+#python-info.yml
+- hosts: all
+  gather_facts: true
+  tasks:
+    - name: Display Python version
+      debug:
+        var: ansible_python.version
+    

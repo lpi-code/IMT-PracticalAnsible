@@ -1630,3 +1630,153 @@ suse                       : ok=3    changed=0    unreachable=0    failed=0    s
 
 ```
 
+# 17. Implicit variables
+*atelier-16*
+
+## Package info
+```yaml
+# pkg-info.yml
+- hosts: all
+  gather_facts: true
+  tasks:
+    - name: Display package manager
+      debug:
+        var: ansible_pkg_mgr
+```
+
+Let's test it.
+
+```bash
+[vagrant@ansible ema]$ ansible-playbook pkg-info.yml 
+
+PLAY [all] ******************************************************************************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] ******************************************************************************************************************************************************************************************************************************
+ok: [debian]
+ok: [rocky]
+ok: [suse]
+
+TASK [Display package manager] **********************************************************************************************************************************************************************************************************************
+ok: [rocky] => {
+    "ansible_pkg_mgr": "dnf"
+}
+ok: [debian] => {
+    "ansible_pkg_mgr": "apt"
+}
+ok: [suse] => {
+    "ansible_pkg_mgr": "zypper"
+}
+
+PLAY RECAP ******************************************************************************************************************************************************************************************************************************************
+debian                     : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+rocky                      : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+suse                       : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+```
+
+## Python info
+```yaml
+#python-info.yml
+- hosts: all
+  gather_facts: true
+  tasks:
+    - name: Display Python version
+      debug:
+        var: ansible_python.version
+    
+```
+
+Let's test it.
+
+```bash
+[vagrant@ansible ema]$ ansible-playbook python-info.yml 
+
+PLAY [all] ******************************************************************************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] ******************************************************************************************************************************************************************************************************************************
+ok: [debian]
+ok: [suse]
+ok: [rocky]
+
+TASK [Display Python version] ***********************************************************************************************************************************************************************************************************************
+ok: [rocky] => {
+    "ansible_python.version": {
+        "major": 3,
+        "micro": 18,
+        "minor": 9,
+        "releaselevel": "final",
+        "serial": 0
+    }
+}
+ok: [debian] => {
+    "ansible_python.version": {
+        "major": 3,
+        "micro": 2,
+        "minor": 11,
+        "releaselevel": "final",
+        "serial": 0
+    }
+}
+ok: [suse] => {
+    "ansible_python.version": {
+        "major": 3,
+        "micro": 15,
+        "minor": 6,
+        "releaselevel": "final",
+        "serial": 0
+    }
+}
+
+PLAY RECAP ******************************************************************************************************************************************************************************************************************************************
+debian                     : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+rocky                      : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+suse                       : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0 
+```
+
+## DNS info
+```yaml
+# dns-info.yml
+- hosts: all
+  gather_facts: true
+  tasks:
+    - name: Display DNS servers
+      debug:
+        var: ansible_dns.nameservers
+```
+
+Let's test it.
+
+```bash
+[vagrant@ansible ema]$ ansible-playbook dns-info.yml 
+
+PLAY [all] ******************************************************************************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] ******************************************************************************************************************************************************************************************************************************
+ok: [debian]
+ok: [suse]
+ok: [rocky]
+
+TASK [Display DNS servers] **************************************************************************************************************************************************************************************************************************
+ok: [rocky] => {
+    "ansible_dns.nameservers": [
+        "192.168.121.1"
+    ]
+}
+ok: [debian] => {
+    "ansible_dns.nameservers": [
+        "4.2.2.1",
+        "4.2.2.2",
+        "208.67.220.220"
+    ]
+}
+ok: [suse] => {
+    "ansible_dns.nameservers": [
+        "192.168.121.1"
+    ]
+}
+
+PLAY RECAP ******************************************************************************************************************************************************************************************************************************************
+debian                     : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+rocky                      : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+suse                       : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+```

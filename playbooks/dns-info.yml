@@ -1,0 +1,7 @@
+# dns-info.yml
+- hosts: all
+  gather_facts: true
+  tasks:
+    - name: Display DNS servers
+      debug:
+        var: ansible_dns.nameservers
