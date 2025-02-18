@@ -1,0 +1,66 @@
+--- # chrony-01.yml
+- hosts: all
+  gather_facts: true
+  tasks:
+    - name: Install chrony (apt)
+      apt:
+        name: chrony
+        state: present
+      when: ansible_pkg_mgr == 'apt'
+    - name: Install chrony (yum)
+      yum:
+        name: chrony
+        state: present
+      when: ansible_pkg_mgr == 'yum'
+    - name: Install chrony dnf
+      dnf:
+        name: chrony
+        state: present
+      when: ansible_pkg_mgr == 'dnf'
+    - name: Install chrony zypper
+      zypper:
+        name: chrony
+        state: present
+      when: ansible_pkg_mgr == 'zypper'
+    - name: Edit conf for Ubuntu  and Debian
+      copy:
+        dest: /etc/chrony/chrony.conf
+        mode: '0644'
+        content: |
+          # /etc/chrony.conf
+          server 0.fr.pool.ntp.org iburst
+          server 1.fr.pool.ntp.org iburst
+          server 2.fr.pool.ntp.org iburst
+          server 3.fr.pool.ntp.org iburst
+          driftfile /var/lib/chrony/drift
+          makestep 1.0 3
+          rtcsync
+          logdir /var/log/chrony
+      when: ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu'
+    - name: Edit conf for Suse and RedHat
+      copy:
+        dest: /etc/chrony.conf
+        mode: '0644'
+        content: |
+          # /etc/chrony.conf
+          server 0.fr.pool.ntp.org iburst
+          server 1.fr.pool.ntp.org iburst
+          server 2.fr.pool.ntp.org iburst
+          server 3.fr.pool.ntp.org iburst
+          driftfile /var/lib/chrony/drift
+          makestep 1.0 3
+          rtcsync
+          logdir /var/log/chrony
+      when: ansible_os_family == 'Suse' and ansible_os_family == 'RedHat'
+    - name: Start and enable chrony
+      service:
+        name: chrony
+        state: started
+        enabled: yes
+      when: ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu'
+    - name: Start and enable chrony
+      service:
+        name: chronyd
+        state: started
+        enabled: yes
+      when: ansible_os_family == 'Suse' or ansible_os_family == 'RedHat'

@@ -1780,3 +1780,240 @@ rocky                      : ok=2    changed=0    unreachable=0    failed=0    s
 suse                       : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
 
 ```
+
+# 18. Conditionals
+*atelier-17*
+
+## First method
+```yaml
+--- # chrony-01.yml
+- hosts: all
+  gather_facts: true
+  tasks:
+    - name: Install chrony (apt)
+      apt:
+        name: chrony
+        state: present
+      when: ansible_pkg_mgr == 'apt'
+    - name: Install chrony (yum)
+      yum:
+        name: chrony
+        state: present
+      when: ansible_pkg_mgr == 'yum'
+    - name: Install chrony dnf
+      dnf:
+        name: chrony
+        state: present
+      when: ansible_pkg_mgr == 'dnf'
+    - name: Install chrony zypper
+      zypper:
+        name: chrony
+        state: present
+      when: ansible_pkg_mgr == 'zypper'
+    - name: Edit conf for Ubuntu  and Debian
+      copy:
+        dest: /etc/chrony/chrony.conf
+        mode: '0644'
+        content: |
+          # /etc/chrony.conf
+          server 0.fr.pool.ntp.org iburst
+          server 1.fr.pool.ntp.org iburst
+          server 2.fr.pool.ntp.org iburst
+          server 3.fr.pool.ntp.org iburst
+          driftfile /var/lib/chrony/drift
+          makestep 1.0 3
+          rtcsync
+          logdir /var/log/chrony
+      when: ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu'
+    - name: Edit conf for Suse and RedHat
+      copy:
+        dest: /etc/chrony.conf
+        mode: '0644'
+        content: |
+          # /etc/chrony.conf
+          server 0.fr.pool.ntp.org iburst
+          server 1.fr.pool.ntp.org iburst
+          server 2.fr.pool.ntp.org iburst
+          server 3.fr.pool.ntp.org iburst
+          driftfile /var/lib/chrony/drift
+          makestep 1.0 3
+          rtcsync
+          logdir /var/log/chrony
+      when: ansible_os_family == 'Suse' and ansible_os_family == 'RedHat'
+    - name: Start and enable chrony
+      service:
+        name: chrony
+        state: started
+        enabled: yes
+      when: ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu'
+    - name: Start and enable chrony
+      service:
+        name: chronyd
+        state: started
+        enabled: yes
+      when: ansible_os_family == 'Suse' or ansible_os_family == 'RedHat'
+```
+
+Let's test it.
+
+```bash
+[vagrant@ansible ema]$ ansible-playbook playbooks/chrony-01.yml 
+
+PLAY [all] ******************************************************************************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] ******************************************************************************************************************************************************************************************************************************
+fatal: [ubuntu]: UNREACHABLE! => {"changed": false, "msg": "Failed to connect to the host via ssh: vagrant@ubuntu: Permission denied (publickey,password).", "unreachable": true}
+ok: [debian]
+ok: [suse]
+ok: [rocky]
+
+TASK [Install chrony (apt)] *************************************************************************************************************************************************************************************************************************
+skipping: [rocky]
+skipping: [suse]
+ok: [debian]
+
+TASK [Install chrony (yum)] *************************************************************************************************************************************************************************************************************************
+skipping: [rocky]
+skipping: [debian]
+skipping: [suse]
+
+TASK [Install chrony dnf] ***************************************************************************************************************************************************************************************************************************
+skipping: [debian]
+skipping: [suse]
+ok: [rocky]
+
+TASK [Install chrony zypper] ************************************************************************************************************************************************************************************************************************
+skipping: [rocky]
+skipping: [debian]
+ok: [suse]
+
+TASK [Edit conf for Ubuntu  and Debian] *************************************************************************************************************************************************************************************************************
+skipping: [rocky]
+skipping: [suse]
+ok: [debian]
+
+TASK [Edit conf for Suse and RedHat] ****************************************************************************************************************************************************************************************************************
+skipping: [rocky]
+skipping: [debian]
+skipping: [suse]
+
+TASK [Start and enable chrony] **********************************************************************************************************************************************************************************************************************
+skipping: [rocky]
+skipping: [suse]
+ok: [debian]
+
+TASK [Start and enable chrony] **********************************************************************************************************************************************************************************************************************
+skipping: [debian]
+ok: [rocky]
+changed: [suse]
+
+PLAY RECAP ******************************************************************************************************************************************************************************************************************************************
+debian                     : ok=4    changed=0    unreachable=0    failed=0    skipped=5    rescued=0    ignored=0   
+rocky                      : ok=3    changed=0    unreachable=0    failed=0    skipped=6    rescued=0    ignored=0   
+suse                       : ok=3    changed=1    unreachable=0    failed=0    skipped=6    rescued=0    ignored=0   
+
+```
+We can see that the playbook is adaptive of the package manager and distribution.
+ 
+## Second method
+We include dynamic variables in the playbook.
+```yaml
+--- # chrony-02.yml
+- hosts: all
+  vars:
+    RedHat:
+      chrony_package: chrony
+      chrony_service: chronyd
+      chrony_confdir: /etc
+    Suse:
+      chrony_package: chrony
+      chrony_service: chronyd
+      chrony_confdir: /etc
+    Debian:
+      chrony_package: chrony
+      chrony_service: chrony
+      chrony_confdir: /etc/chrony
+    Ubuntu:
+      chrony_package: chrony
+      chrony_service: chrony
+      chrony_confdir: /etc/chrony
+  handlers:
+    - name: restart chrony
+      service:
+        name: "{{ chrony_service }}"
+        state: restarted
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        chrony_package: "{{ lookup('vars', ansible_os_family).chrony_package }}"
+        chrony_service: "{{ lookup('vars', ansible_os_family).chrony_service }}"
+        chrony_confdir: "{{ lookup('vars', ansible_os_family).chrony_confdir }}"
+    - name: Install chrony
+      ansible.builtin.package:
+        name: "{{ chrony_package }}"
+        state: present
+    - name: Edit chrony.conf
+      ansible.builtin.copy:
+        dest: "{{ chrony_confdir }}/chrony.conf"
+        mode: '0644'
+        content: |
+          # /etc/chrony.conf
+          server 0.fr.pool.ntp.org iburst
+          server 1.fr.pool.ntp.org iburst
+          server 2.fr.pool.ntp.org iburst
+          server 3.fr.pool.ntp.org iburst
+          driftfile /var/lib/chrony/drift
+          makestep 1.0 3
+          rtcsync
+          logdir /var/log/chrony
+    - name: Start and enable chrony
+      ansible.builtin.service:
+        name: "{{ chrony_service }}"
+        state: started
+        enabled: yes
+
+```
+
+Let's test it.
+
+```bash
+
+[vagrant@ansible ema]$ ansible-playbook playbooks/chrony-02.yml 
+
+PLAY [all] ******************************************************************************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] ******************************************************************************************************************************************************************************************************************************
+fatal: [ubuntu]: UNREACHABLE! => {"changed": false, "msg": "Failed to connect to the host via ssh: vagrant@ubuntu: Permission denied (publickey,password).", "unreachable": true}
+ok: [debian]
+ok: [suse]
+ok: [rocky]
+
+TASK [Set variables] ********************************************************************************************************************************************************************************************************************************
+ok: [rocky]
+ok: [debian]
+ok: [suse]
+
+TASK [Install chrony] *******************************************************************************************************************************************************************************************************************************
+ok: [suse]
+ok: [debian]
+ok: [rocky]
+
+TASK [Edit chrony.conf] *****************************************************************************************************************************************************************************************************************************
+ok: [debian]
+changed: [suse]
+changed: [rocky]
+
+TASK [Start and enable chrony] **********************************************************************************************************************************************************************************************************************
+ok: [debian]
+ok: [rocky]
+ok: [suse]
+
+PLAY RECAP ******************************************************************************************************************************************************************************************************************************************
+debian                     : ok=5    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+rocky                      : ok=5    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+suse                       : ok=5    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+ubuntu                     : ok=0    changed=0    unreachable=1    failed=0    skipped=0    rescued=0    ignored=0   
+
+```
+
+It works.
