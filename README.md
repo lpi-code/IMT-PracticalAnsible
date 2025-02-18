@@ -1,13 +1,9 @@
 # IMT-PracticalAnsible
 
-<div style="display: flex; align-items: center;">
-  <div style="flex: 1;">
-    Practical for ansible
-  </div>
-  <div style="flex: 1;">
-    <img src="images/imt.svg" alt="image" style="max-width: 300px;">
-  </div>
-</div>
+Practical Ansible course at IMT Alès 
+![IMT](images/imt.svg | width=100)
+=====================================
+This repository contains the work done during the practical ansible course at IMT Alès.
 
 ## Table of contents
 1. [Install ansible (atelier-01)](#1-install-ansible-on-ubuntu)
