@@ -6,6 +6,9 @@
 This repository contains the work done during the practical ansible course at IMT Alès.
 The practical can be found on [Microlinux](https://blog.microlinux.fr/formation-ansible-01-intro)
 
+<br><br><br>
+---
+
 ## Table of contents
 1. [Install ansible (atelier-01)](#1-install-ansible-on-ubuntu)
 2. [Install with ppa (atelier-01)](#2-install-with-ppa)
