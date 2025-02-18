@@ -1,0 +1,16 @@
+# myvars2.yml
+- hosts: all
+  gather_facts: false
+
+  tasks:
+    - name: Set the value of mycar
+      ansible.builtin.set_fact:
+        mycar: "BMW"
+        mybike: "Giant"
+      run_once: true
+      delegate_to: localhost
+    - name: Display the value of mycar
+      ansible.builtin.debug:
+        msg: "My car is a {{ mycar }} and my bike is a {{ mybike }}"
+      run_once: true
+      delegate_to: localhost

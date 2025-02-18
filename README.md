@@ -1232,3 +1232,210 @@ target03                   : ok=4    changed=0    unreachable=0    failed=0    s
 
 It is idempotent.
 
+# 15. Variables
+*ateliers-14*
+```yaml
+# myvars1.yml
+- hosts: all
+  gather_facts: false
+  vars:
+    mycar: "Toyota"
+    mybike: "Specialized"
+  tasks:
+    - name: Display the value of mycar
+      ansible.builtin.debug:
+        msg: "My car is a {{ mycar }}"
+    - name: Display the value of mybike
+      ansible.builtin.debug:
+        msg: "My bike is a {{ mybike }}"
+```
+
+```bash
+[vagrant@control ema]$ ansible-playbook playbooks/myvars1.yml
+
+PLAY [all] **************************************************************************************************************************************************************************
+
+TASK [Display the value of mycar] ***************************************************************************************************************************************************
+ok: [target01] => {
+    "msg": "My car is a Toyota"
+}
+ok: [target02] => {
+    "msg": "My car is a Toyota"
+}
+ok: [target03] => {
+    "msg": "My car is a Toyota"
+}
+
+TASK [Display the value of mybike] **************************************************************************************************************************************************
+ok: [target01] => {
+    "msg": "My bike is a Specialized"
+}
+ok: [target02] => {
+    "msg": "My bike is a Specialized"
+}
+ok: [target03] => {
+    "msg": "My bike is a Specialized"
+}
+
+PLAY RECAP **************************************************************************************************************************************************************************
+target01                   : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+target02                   : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+target03                   : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+```
+
+It works like a charm.
+
+```bash
+[vagrant@control ema]$ ansible-playbook playbooks/myvars1.yml -e mybike=giant
+...
+ok: [target01] => {
+    "msg": "My bike is a giant"
+}
+...
+[vagrant@control ema]$ ansible-playbook playbooks/myvars1.yml -e mycar='dumpster on wheels'
+...
+ok: [target01] => {
+    "msg": "My car is a dumpster on wheels"
+}
+...
+[vagrant@control ema]$ ansible-playbook playbooks/myvars1.yml -e mycar='BMW',mybike='hypothetical thing'
+...
+ok: [target01] => {
+    "msg": "My car is a BMW"
+}
+...
+ok: [target01] => {
+    "msg": "My bike is a hypothetical thing"
+}
+...
+```
+
+We successfully overrided the variables.
+
+Let's try with a set_fact task.
+
+```yaml
+# myvars2.yml
+- hosts: all
+  gather_facts: false
+
+  tasks:
+    - name: Set the value of mycar
+      ansible.builtin.set_fact:
+        mycar: "BMW"
+        mybike: "Giant"
+      run_once: true
+      delegate_to: localhost
+    - name: Display the value of mycar
+      ansible.builtin.debug:
+        msg: "My car is a {{ mycar }} and my bike is a {{ mybike }}"
+      run_once: true
+      delegate_to: localhost
+```
+
+```bash
+[vagrant@control ema]$ ansible-playbook playbooks/myvars2.yml 
+
+PLAY [all] **************************************************************************************************************************************************************************
+
+TASK [Set the value of mycar] *******************************************************************************************************************************************************
+ok: [target01 -> localhost]
+
+TASK [Display the value of mycar] ***************************************************************************************************************************************************
+ok: [target01 -> localhost] => {
+    "msg": "My car is a BMW and my bike is a Giant"
+}
+
+PLAY RECAP **************************************************************************************************************************************************************************
+target01                   : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+```
+
+Let's see if we can override the variables.
+
+```bash
+[vagrant@control ema]$ ansible-playbook playbooks/myvars2.yml -e "mycar=Renault, mybike=Lapierre"
+
+PLAY [all] **************************************************************************************************************************************************************************
+
+TASK [Set the value of mycar] *******************************************************************************************************************************************************
+ok: [target01 -> localhost]
+
+TASK [Display the value of mycar] ***************************************************************************************************************************************************
+ok: [target01 -> localhost] => {
+    "msg": "My car is a Renault, and my bike is a Lapierre"
+}
+
+PLAY RECAP **************************************************************************************************************************************************************************
+target01                   : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+```
+
+We successfully overrided the variables.
+
+Let's try with default vars
+
+```yaml
+# myvars3.yml
+- hosts: all
+  gather_facts: false
+  tasks:
+    - name: Display the value of mycar
+      ansible.builtin.debug:
+        msg: |
+        My car is a {{ mycar | default('VW') }}
+        My bike is a {{ mybike | default('BMW') }}
+```
+
+```bash
+[vagrant@control playbooks]$ ansible-playbook myvars3.yml
+
+PLAY [all] ***************************************************************************************************************************************************************************************************************************************************************************************************
+
+TASK [Display the value of mycar] ****************************************************************************************************************************************************************************************************************************************************************************
+ok: [target01] => {
+    "msg": "My car is a Toyota\nMy bike is a Specialized\n"
+}
+ok: [target02] => {
+    "msg": "My car is a Toyota\nMy bike is a Specialized\n"
+}
+ok: [target03] => {
+    "msg": "My car is a Toyota\nMy bike is a Specialized\n"
+}
+
+PLAY RECAP ***************************************************************************************************************************************************************************************************************************************************************************************************
+target01                   : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+target02                   : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+target03                   : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+```
+
+We edit the inventory to change the printed vales for target02. We edit :
+```ini
+[testing]
+target01
+target02 mycar=Mercedes mybike=Honda
+target03
+```
+
+```bash
+[vagrant@control playbooks]$ ansible-playbook myvars3.yml
+
+PLAY [all] ***************************************************************************************************************************************************************************************************************************************************************************************************
+
+TASK [Display the value of mycar] ****************************************************************************************************************************************************************************************************************************************************************************
+ok: [target01] => {
+    "msg": "My car is a Toyota\nMy bike is a Specialized\n"
+}
+ok: [target03] => {
+    "msg": "My car is a Toyota\nMy bike is a Specialized\n"
+}
+ok: [target02] => {
+    "msg": "My car is a Mercedes\nMy bike is a Honda\n"
+}
+
+PLAY RECAP ***************************************************************************************************************************************************************************************************************************************************************************************************
+target01                   : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+target02                   : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+target03                   : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+```
+
+It works.

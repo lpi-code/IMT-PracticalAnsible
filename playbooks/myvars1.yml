@@ -1,0 +1,12 @@
+- hosts: all
+  gather_facts: false
+  vars:
+    mycar: "Toyota"
+    mybike: "Specialized"
+  tasks:
+    - name: Display the value of mycar
+      ansible.builtin.debug:
+        msg: "My car is a {{ mycar }}"
+    - name: Display the value of mybike
+      ansible.builtin.debug:
+        msg: "My bike is a {{ mybike }}"

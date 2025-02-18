@@ -1,0 +1,10 @@
+# myvars3.yml
+- hosts: all
+  gather_facts: false
+  tasks:
+    - name: Display the value of mycar
+      ansible.builtin.debug:
+        msg: |
+        My car is a {{ mycar | default('VW') }}
+        My bike is a {{ mybike | default('BMW') }}
+  
