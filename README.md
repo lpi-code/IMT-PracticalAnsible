@@ -1,5 +1,35 @@
 # IMT-PracticalAnsible
-Practical for ansible 
+
+<div style="display: flex; align-items: center;">
+  <div style="flex: 1;">
+    Practical for ansible
+  </div>
+  <div style="flex: 1;">
+    <img src="images/imt.svg" alt="image" style="max-width: 300px;">
+  </div>
+</div>
+
+## Table of contents
+1. [Install ansible (atelier-01)](#1-install-ansible-on-ubuntu)
+2. [Install with ppa (atelier-01)](#2-install-with-ppa)
+3. [Install with pip (atelier-01)](#3-install-with-pip)
+4. [Ping ansible (atelier-02)](#4-ping-ansible)
+5. [Ping with atelier-03](#5-ping-with-atelier-03)
+6. [Install direnv (atelier-04)](#6-install-direnv)
+7. [Logs (atelier-05)](#7-logs)
+8. [Inventory (atelier-05)](#8-inventory)
+9. [Recap (atelier-06)](#9-recap-atelier-06)
+10. [Idempotence and adhoc commands (atelier-07)](#10-idempotence-and-adhoc-commands)
+11. [Unreachable hosts (atelier-08)](#11-unreachable-hosts)
+12. [Playbook (atelier-09)](#12-playbook)
+13. [Adaptive playbook (atelier-10)](#13-adaptive-playbook)
+14. [Handlers (atelier-11 and atelier-12)](#14-handlers)
+15. [Variables (atelier-13 and atelier-14)](#15-variables)
+16. [Stdout and registered variables (atelier-15)](#16-stdout-and-registered-variables)
+17. [Implicit variables (atelier-16)](#17-implicit-variables)
+18. [Conditionals (atelier-17)](#18-conditionals)
+19. [Jinja and templates (atelier-18)](#19-jinja-and-templates)
+
 
 ## Introduction
 ### Provision vagrant vm
@@ -57,9 +87,10 @@ ansible [core 2.18.2]
   python version = 3.11.2 (main, Nov 30 2024, 21:22:50) [GCC 12.2.0] (/home/vagrant/ansible/bin/python3)
   jinja version = 3.1.5
   libyaml = True
-````
+```
 
 ## 1. Install ansible on Ubuntu
+*atelier-01*
 
 ```$ apt update && apt-cache search ansible
 vagrant@ubuntu:~$ apt-cache search ansible
@@ -86,6 +117,7 @@ ansible 2.10.8
 ```
 
 ## 2. Install with ppa
+*atelier-01*
 
 ```bash
 $ sudo apt-add-repository ppa:ansible/ansible
@@ -115,6 +147,7 @@ ansible [core 2.17.8]
 Ansible is much more recent with the ppa repository.
 
 ## 3. Install with pip
+*atelier-01*
 
 ```bash
 $ python3 -m venv ansible
@@ -137,6 +170,7 @@ ansible [core 2.15.13]
 ```
 
 ## 4. Ping ansible
+*atelier-02*
 
 We setup atelier-02
 
@@ -196,6 +230,7 @@ suse | SUCCESS => {
 All host are on success
 
 ## 5. Ping with atelier-03
+*atelier-03*
 
 ```
 [vagrant@control ~]$ ansible all -i target01,target02,target03 -u vagrant -m ping
@@ -212,7 +247,7 @@ target01 | SUCCESS => {
 It works
 
 ## 6. Install direnv
-
+*atelier-04*
 ```
 vagrant@debian:~/monprojet$ echo "export TESTVAR=Yatahongaga" > .envrc
 direnv: error /home/vagrant/monprojet/.envrc is blocked. Run `direnv allow` to approve its content
@@ -240,7 +275,7 @@ Yatahongaga
 It also works on rocky
 
 ## 7. Logs
-
+*atelier-05*
 ```
 [vagrant@ansible ~]$ ansible all -i debian,rocky,suse -m ping
 debian | SUCCESS => {
@@ -297,7 +332,7 @@ Expand_path is not found, we will use `pwd` instead.
 ```
 
 
-I had trouble running the command `direnv allow` because the `.envrc` file was not found. I had to create it first.
+| I had trouble running the command `direnv allow` because the `.envrc` file was not found. I had to create it first.
 
 ```
 [vagrant@ansible ema]$ direnv allow
@@ -350,7 +385,8 @@ debian | SUCCESS => {
 }
 ```
 
-# 8. Inventory
+## 8. Inventory
+*atelier-05*
 
 Let's write the inventory file.
 
@@ -423,8 +459,8 @@ ansible_user=vagrant
 ansible_become=true
 ```
 
-# 9. Recap (atelier-06)
-
+## 9. Recap (atelier-06)
+*atelier-06*
 
 1. Editing /etc/host to access other vm
 ```
@@ -571,7 +607,8 @@ root:*:19579:0:99999:7:::
 ```
 No error, it works.
 
-# 10. Idempotence
+## 10. Idempotence and adhoc commands
+*atelier-07*
 
 1. Install packages with adhoc command
 
@@ -669,7 +706,7 @@ suse | CHANGED | rc=0 | (stdout) Filesystem      Size  Used Avail Use% Mounted o
 
 We notice that the output is in yellow and that CHANGED is displayed. This is because the output is not idempotent as the command module cannot determine if the output is the same or not.
 
-# 11. Unreachable hosts
+## 11. Unreachable hosts
 
 *atelier-08*
 
@@ -740,7 +777,7 @@ suse                       : ok=0    changed=0    unreachable=1    failed=0    s
 ```
 We see that suse is unreachable. ansible-playbook will continue to run the playbook on the other hosts but will not run it on the unreachable host.
 
-# 12. Playbook
+## 12. Playbook
 
 *atelier-09*
 
@@ -917,7 +954,7 @@ target03                   : ok=3    changed=2    unreachable=0    failed=0    s
 ```
 Yaay, it works.
 
-# 13. Adaptive playbook
+## 13. Adaptive playbook
 *atelier-10*
 As our previous playbook already took into account the different package managers, we can use it as an adaptive playbook and fix the package name if the package manager is not the same.
 
@@ -1035,7 +1072,8 @@ suse                       : ok=5    changed=2    unreachable=0    failed=0    s
 
 Nice it works.
 
-# 14. Handlers
+## 14. Handlers
+*atelier-11 and atelier-12*
 
 After editing we try without the handlers.
 ```bash
@@ -1159,8 +1197,6 @@ target02                   : ok=7    changed=0    unreachable=0    failed=0    s
 target03                   : ok=7    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
 ```
 
-*atelier-11*
-
 We write the following playbook :
 ``yaml
 - hosts: all
@@ -1232,8 +1268,8 @@ target03                   : ok=4    changed=0    unreachable=0    failed=0    s
 
 It is idempotent.
 
-# 15. Variables
-*ateliers-14*
+## 15. Variables
+*ateliers-13 and atelier-14*
 ```yaml
 # myvars1.yml
 - hosts: all
@@ -1489,7 +1525,7 @@ target03                   : ok=1    changed=0    unreachable=0    failed=0    s
 
 We are prompted for the username and password.
 
-# 16. Stdout and registered variables
+## 16. Stdout and registered variables
 *atelier-15*
 
 We write the following playbook :
@@ -1630,10 +1666,10 @@ suse                       : ok=3    changed=0    unreachable=0    failed=0    s
 
 ```
 
-# 17. Implicit variables
+## 17. Implicit variables
 *atelier-16*
 
-## Package info
+### Package info
 ```yaml
 # pkg-info.yml
 - hosts: all
@@ -1673,7 +1709,7 @@ rocky                      : ok=2    changed=0    unreachable=0    failed=0    s
 suse                       : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
 ```
 
-## Python info
+### Python info
 ```yaml
 #python-info.yml
 - hosts: all
@@ -1732,7 +1768,7 @@ rocky                      : ok=2    changed=0    unreachable=0    failed=0    s
 suse                       : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0 
 ```
 
-## DNS info
+### DNS info
 ```yaml
 # dns-info.yml
 - hosts: all
@@ -1781,10 +1817,10 @@ suse                       : ok=2    changed=0    unreachable=0    failed=0    s
 
 ```
 
-# 18. Conditionals
+## 18. Conditionals
 *atelier-17*
 
-## First method
+### First method
 ```yaml
 --- # chrony-01.yml
 - hosts: all
@@ -1915,7 +1951,7 @@ suse                       : ok=3    changed=1    unreachable=0    failed=0    s
 ```
 We can see that the playbook is adaptive of the package manager and distribution.
  
-## Second method
+### Second method
 We include dynamic variables in the playbook.
 ```yaml
 --- # chrony-02.yml
@@ -2017,3 +2053,125 @@ ubuntu                     : ok=0    changed=0    unreachable=1    failed=0    s
 ```
 
 It works.
+
+## 19. Jinja and Templates 
+*atelier-18*
+
+We write the configuration in jinja template (templates/chrony.conf.j2)
+
+```jinja
+# {{ chrony_confdir }}/chrony.conf
+server 0.fr.pool.ntp.org iburst
+server 1.fr.pool.ntp.org iburst
+server 2.fr.pool.ntp.org iburst
+server 3.fr.pool.ntp.org iburst
+driftfile /var/lib/chrony/drift
+makestep 1.0 3
+rtcsync
+logdir /var/log/chrony
+```
+
+We write the playbook
+
+```yaml
+--- # chrony-jinja.yml
+- hosts: all
+  vars:
+    RedHat:
+      chrony_package: chrony
+      chrony_service: chronyd
+      chrony_confdir: /etc
+    Suse:
+      chrony_package: chrony
+      chrony_service: chronyd
+      chrony_confdir: /etc
+    Debian:
+      chrony_package: chrony
+      chrony_service: chrony
+      chrony_confdir: /etc/chrony
+    Ubuntu:
+      chrony_package: chrony
+      chrony_service: chrony
+      chrony_confdir: /etc/chrony
+  handlers:
+    - name: restart chrony
+      service:
+        name: "{{ chrony_service }}"
+        state: restarted
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        chrony_package: "{{ lookup('vars', ansible_os_family).chrony_package }}"
+        chrony_service: "{{ lookup('vars', ansible_os_family).chrony_service }}"
+        chrony_confdir: "{{ lookup('vars', ansible_os_family).chrony_confdir }}"
+    - name: Install chrony
+      ansible.builtin.package:
+        name: "{{ chrony_package }}"
+        state: present
+    - name: Edit chrony.conf
+      ansible.builtin.template:
+        src: chrony.conf.j2
+        dest: "{{ chrony_confdir }}/chrony.conf"
+        mode: '0644'
+        owner: root
+        group: root
+
+    - name: Start and enable chrony
+      ansible.builtin.service:
+        name: "{{ chrony_service }}"
+        state: started
+        enabled: yes
+```
+
+Let's test it.
+
+```bash
+
+[vagrant@ansible ema]$ ansible-playbook playbooks/chrony-jinja.yml 
+
+PLAY [all] *************************************************************************************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] *************************************************************************************************************************************************************************************************************************************
+fatal: [ubuntu]: UNREACHABLE! => {"changed": false, "msg": "Failed to connect to the host via ssh: vagrant@ubuntu: Permission denied (publickey,password).", "unreachable": true}
+ok: [debian]
+ok: [suse]
+ok: [rocky]
+
+TASK [Set variables] ***************************************************************************************************************************************************************************************************************************************
+ok: [rocky]
+ok: [suse]
+ok: [debian]
+
+TASK [Install chrony] **************************************************************************************************************************************************************************************************************************************
+ok: [suse]
+ok: [debian]
+ok: [rocky]
+
+TASK [Edit chrony.conf] ************************************************************************************************************************************************************************************************************************************
+changed: [debian]
+changed: [suse]
+changed: [rocky]
+
+TASK [Start and enable chrony] *****************************************************************************************************************************************************************************************************************************
+ok: [debian]
+ok: [rocky]
+changed: [suse]
+
+PLAY RECAP *************************************************************************************************************************************************************************************************************************************************
+debian                     : ok=5    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+rocky                      : ok=5    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+suse                       : ok=5    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+ubuntu                     : ok=0    changed=0    unreachable=1    failed=0    skipped=0    rescued=0    ignored=0   
+
+```
+
+Let's see the result 
+
+```
+[vagrant@ansible ema]$ ansible -m shell -a "cat /etc/chrony.conf | head -n 1" --one-line rocky,suse
+suse | CHANGED | rc=0 | (stdout) # /etc/chrony.conf
+rocky | CHANGED | rc=0 | (stdout) # /etc/chrony.conf
+[vagrant@ansible ema]$ ansible -m shell -a "cat /etc/chrony/chrony.conf | head -n 1" --one-line debian
+debian | CHANGED | rc=0 | (stdout) # /etc/chrony/chrony.conf
+```
+| As we can see, the configuration file is correctly written.

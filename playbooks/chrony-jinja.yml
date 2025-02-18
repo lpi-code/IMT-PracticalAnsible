@@ -1,0 +1,49 @@
+--- # chrony-jinja.yml
+- hosts: all
+  vars:
+    RedHat:
+      chrony_package: chrony
+      chrony_service: chronyd
+      chrony_confdir: /etc
+    Suse:
+      chrony_package: chrony
+      chrony_service: chronyd
+      chrony_confdir: /etc
+    Debian:
+      chrony_package: chrony
+      chrony_service: chrony
+      chrony_confdir: /etc/chrony
+    Ubuntu:
+      chrony_package: chrony
+      chrony_service: chrony
+      chrony_confdir: /etc/chrony
+  handlers:
+    - name: restart chrony
+      service:
+        name: "{{ chrony_service }}"
+        state: restarted
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        chrony_package: "{{ lookup('vars', ansible_os_family).chrony_package }}"
+        chrony_service: "{{ lookup('vars', ansible_os_family).chrony_service }}"
+        chrony_confdir: "{{ lookup('vars', ansible_os_family).chrony_confdir }}"
+    - name: Install chrony
+      ansible.builtin.package:
+        name: "{{ chrony_package }}"
+        state: present
+    - name: Edit chrony.conf
+      ansible.builtin.template:
+        src: templates/chrony.conf.j2
+        dest: "{{ chrony_confdir }}/chrony.conf"
+        mode: '0644'
+        owner: root
+        group: root
+
+    - name: Start and enable chrony
+      ansible.builtin.service:
+        name: "{{ chrony_service }}"
+        state: started
+        enabled: yes
+
+      
