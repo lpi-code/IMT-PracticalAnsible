@@ -1,0 +1,13 @@
+# packages.yml
+- hosts: all
+  gather_facts: true
+  tasks:
+    - name: Listing installed packages
+      ansible.builtin.shell: rpm -qa | wc -l
+      register: installed_packages
+      changed_when: false
+      when: ansible_os_family == "RedHat" or ansible_os_family == "Suse"
+    - name: Display installed packages
+      ansible.builtin.debug:
+        var: installed_packages.stdout
+      when: ansible_os_family == "RedHat" or ansible_os_family == "Suse"

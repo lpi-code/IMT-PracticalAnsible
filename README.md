@@ -1488,3 +1488,144 @@ target03                   : ok=1    changed=0    unreachable=0    failed=0    s
 ```
 
 We are prompted for the username and password.
+
+# 16. Stdout and registered variables
+*atelier-15*
+
+We write the following playbook :
+
+```yaml
+# kernel.yml
+- hosts: all
+  gather_facts: false
+  tasks:
+    - name: Display the kernel version
+      ansible.builtin.command: uname -a
+      register: kernel_version
+    - name: Display the kernel version
+      ansible.builtin.debug:
+        msg: "The kernel version is {{ kernel_version.stdout_lines[0] }}"
+```
+
+We run the playbook.
+
+```bash
+[vagrant@ansible ema]$ ansible-playbook playbooks/kernel.yml 
+
+PLAY [all] ***************************************************************************************************************************************************************************************************************************************************************************************************
+
+TASK [Display the kernel version] ****************************************************************************************************************************************************************************************************************************************************************************
+ok: [debian]
+ok: [suse]
+ok: [rocky]
+
+TASK [Display the kernel version] ****************************************************************************************************************************************************************************************************************************************************************************
+ok: [rocky] => {
+    "msg": "The kernel version is Linux rocky 5.14.0-362.13.1.el9_3.x86_64 #1 SMP PREEMPT_DYNAMIC Wed Dec 13 14:07:45 UTC 2023 x86_64 x86_64 x86_64 GNU/Linux"
+}
+ok: [debian] => {
+    "msg": "The kernel version is Linux debian 6.1.0-17-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.1.69-1 (2023-12-30) x86_64 GNU/Linux"
+}
+ok: [suse] => {
+    "msg": "The kernel version is Linux suse 5.14.21-150500.55.39-default #1 SMP PREEMPT_DYNAMIC Tue Dec 5 10:06:35 UTC 2023 (2e4092e) x86_64 x86_64 x86_64 GNU/Linux"
+}
+
+PLAY RECAP ***************************************************************************************************************************************************************************************************************************************************************************************************
+debian                     : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+rocky                      : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+suse                       : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0  
+```
+
+We try with the var keyword.
+
+```yaml
+# kernel.yml
+- hosts: all
+  gather_facts: false
+  tasks:
+    - name: Display the kernel version
+      ansible.builtin.command: uname -a
+      register: kernel_version
+    - name: Display the kernel version
+      ansible.builtin.debug:
+        var: kernel_version.stdout
+```
+
+We run the playbook.
+
+```bash
+[vagrant@ansible ema]$ ansible-playbook playbooks/kernel.yml 
+
+PLAY [all] ***************************************************************************************************************************************************************************************************************************************************************************************************
+
+TASK [Display the kernel version] ****************************************************************************************************************************************************************************************************************************************************************************
+ok: [debian]
+ok: [rocky]
+ok: [suse]
+
+TASK [Display the kernel version] ****************************************************************************************************************************************************************************************************************************************************************************
+ok: [rocky] => {
+    "kernel_version.stdout": "Linux rocky 5.14.0-362.13.1.el9_3.x86_64 #1 SMP PREEMPT_DYNAMIC Wed Dec 13 14:07:45 UTC 2023 x86_64 x86_64 x86_64 GNU/Linux"
+}
+ok: [debian] => {
+    "kernel_version.stdout": "Linux debian 6.1.0-17-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.1.69-1 (2023-12-30) x86_64 GNU/Linux"
+}
+ok: [suse] => {
+    "kernel_version.stdout": "Linux suse 5.14.21-150500.55.39-default #1 SMP PREEMPT_DYNAMIC Tue Dec 5 10:06:35 UTC 2023 (2e4092e) x86_64 x86_64 x86_64 GNU/Linux"
+}
+
+PLAY RECAP ***************************************************************************************************************************************************************************************************************************************************************************************************
+debian                     : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+rocky                      : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+suse                       : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+```
+It also works.
+
+Let's list the number of packages
+```yaml
+# packages.yml
+- hosts: all
+  gather_facts: true
+  tasks:
+    - name: Listing installed packages
+      ansible.builtin.shell: rpm -qa | wc -l
+      register: installed_packages
+      changed_when: false
+      when: ansible_os_family == "RedHat" or ansible_os_family == "Suse"
+    - name: Display installed packages
+      ansible.builtin.debug:
+        var: installed_packages.stdout
+      when: ansible_os_family == "RedHat" or ansible_os_family == "Suse"
+```
+
+Let's test
+[vagrant@ansible ema]$ ansible-playbook packages.yml 
+
+PLAY [all] ******************************************************************************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] ******************************************************************************************************************************************************************************************************************************
+ok: [debian]
+ok: [suse]
+ok: [rocky]
+
+TASK [Listing installed packages] *******************************************************************************************************************************************************************************************************************
+skipping: [debian]
+ok: [rocky]
+ok: [suse]
+
+TASK [Display installed packages] *******************************************************************************************************************************************************************************************************************
+ok: [rocky] => {
+    "installed_packages.stdout": "475"
+}
+skipping: [debian]
+ok: [suse] => {
+    "installed_packages.stdout": "597"
+}
+
+PLAY RECAP ******************************************************************************************************************************************************************************************************************************************
+debian                     : ok=1    changed=0    unreachable=0    failed=0    skipped=2    rescued=0    ignored=0   
+rocky                      : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+suse                       : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+```
+

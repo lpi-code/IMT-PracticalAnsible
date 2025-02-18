@@ -1,0 +1,10 @@
+# kernel.yml
+- hosts: all
+  gather_facts: false
+  tasks:
+    - name: Display the kernel version
+      ansible.builtin.command: uname -a
+      register: kernel_version
+    - name: Display the kernel version
+      ansible.builtin.debug:
+        var: kernel_version.stdout
