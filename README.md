@@ -1,11 +1,9 @@
 # IMT-PracticalAnsible
 
-<table style="width: 100%; display: flex; justify-content: space-between;">
-  <tr>
-    <td style="display: inline-block;">Practical Ansible course at IMT Alès</td>
-    <td style="text-align: right;"><img src="images/imt.svg" alt="IMT" width="200px"></td>
-  </tr>
-</table>
+<div class="space-between" style="display: flex; justify-content: space-between;" align="center">
+  <p style="display: inline-block;">Practical Ansible course at IMT Alès</p>
+  <img src="images/imt.svg" alt="IMT" width="200px">
+</div>
 This repository contains the work done during the practical ansible course at IMT Alès.
 
 ## Table of contents
