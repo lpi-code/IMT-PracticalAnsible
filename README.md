@@ -1,6 +1,6 @@
 # IMT-PracticalAnsible
 
-<div class="space-between">
+<div class="space-between" style="display: flex; justify-content: space-between;">
   <p style="display: inline-block;">Practical Ansible course at IMT Alès</p>
   <img src="images/imt.svg" alt="IMT" width="200px">
 </div>
